@@ -54,6 +54,15 @@ def report(limit=0, offset=0):
     return json_result_list
 
 
+def dashboard():
+    x= []
+    y = []
+    query = db.session.query(Persona)
+    for datos in query:
+        x.append(datos.id)
+        y.append(datos.age)
+    return x, y
+
 if __name__ == "__main__":
     print("Test del modulo heart.py")
 
@@ -72,6 +81,10 @@ if __name__ == "__main__":
 
     # Aquí se puede ensayar todo lo que necesitemos con nuestra DB
     # ...
+    insert(name="Florencia", age=24)
+    
+    datos = report()
+    print(datos)
 
     db.session.remove()
     db.drop_all()

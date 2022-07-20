@@ -18,7 +18,7 @@ http://127.0.0.1:5000/
 from datetime import datetime
 
 import traceback
-from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
+from flask import Flask, request, jsonify, render_template, Response, redirect
 
 import utils
 import heart
@@ -36,9 +36,12 @@ heart.db.init_app(app)
 def index():
     try:
         # Imprimir los distintos endopoints disponibles
-        # Renderizar el temaplate HTML index.html
-        print("Renderizar index.html")
-        return render_template('index.html')
+        result = "<h1>Bienvenido!!</h1>"
+        result += "<h2>Endpoints disponibles:</h2>"
+        result += "<h3>[GET] /pulsaciones?limit=[]&offset=[] --> mostrar últimas pulsaciones registradas (limite and offset are optional)</h3>"
+        result += "<h3>[GET] /pulsaciones/<name> --> mostrar el histórico de pulsaciones de una persona</h3>"
+        result += "<h3>[POST] /registro --> ingresar nuevo registro de pulsaciones por JSON</h3>"
+        return(result)
     except:
         return jsonify({'trace': traceback.format_exc()})
 
@@ -63,9 +66,8 @@ def pulsaciones():
         # Obtener el reporte
         data = heart.report(limit=limit, offset=offset)
 
-        # Renderizar el temaplate HTML pulsaciones.html
-        print("Renderizar tabla.html")
-        return render_template('tabla.html', data=data)
+        # Transformar json a json string para enviar al HTML
+        return jsonify(data)
     except:
         return jsonify({'trace': traceback.format_exc()})
 
@@ -86,37 +88,20 @@ def pulsaciones_historico(name):
     except:
         return jsonify({'trace': traceback.format_exc()})
 
-
 # Ruta que se ingresa por la ULR 127.0.0.1:5000/registro
-@app.route("/registro", methods=['GET', 'POST'])
+@app.route("/registro", methods=['POST'])
 def registro():
-    if request.method == 'GET':
-        # Si entré por "GET" es porque acabo de cargar la página
-        try:
-            # Renderizar el temaplate HTML registro.html
-            print("Renderizar registro.html")
-            return render_template('registro.html')
-        except:
-            return jsonify({'trace': traceback.format_exc()})
-
     if request.method == 'POST':
-        try:
-            # Obtener del HTTP POST JSON el nombre (en minisculas) y los pulsos
-            nombre = str(request.form.get('name')).lower()
-            pulsos = str(request.form.get('heartrate'))
+        # Obtener del HTTP POST JSON el nombre (en minisculas) y los pulsos
+        nombre = str(request.form.get('name')).lower()
+        pulsos = str(request.form.get('heartrate'))
 
-            if(nombre is None or pulsos is None or pulsos.isdigit() is False):
-                # Datos ingresados incorrectos
-                    return Response(status=400)
-            time = datetime.now()
-
-            print("Registrar persona", nombre, "con pulsaciones", pulsos)
-            heart.insert(time, nombre, int(pulsos))
-
-            # Como respuesta al POST devolvemos la tabla de valores
-            return redirect(url_for('pulsaciones'))
-        except:
-            return jsonify({'trace': traceback.format_exc()})
+        if(nombre is None or pulsos is None or pulsos.isdigit() is False):
+            # Datos ingresados incorrectos
+                return Response(status=400)
+        time = datetime.now()
+        heart.insert(time, nombre, int(pulsos))
+        return Response(status=200)
 
 
 # Este método se ejecutará solo una vez
@@ -133,3 +118,5 @@ if __name__ == '__main__':
 
     # Lanzar server
     app.run(host="127.0.0.1", port=5000)
+
+    

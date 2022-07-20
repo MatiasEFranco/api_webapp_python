@@ -22,34 +22,14 @@ app = Flask(__name__)
 # Ruta que se ingresa por la ULR 127.0.0.1:5000
 @app.route("/")
 def index():
+    # Siempre es recomendable colocar nuestro
+    # código entre try except para que el servidor
+    # no se caiga si llega a fallar algo
     try:
-        # Renderizar el temaplate HTML index.html
-        print("Renderizar index.html")
-        return render_template('index.html')
+        return "Hola mundo desde Flask!"
     except:
-        return jsonify({'trace': traceback.format_exc()})
-
-
-# Ruta que se ingresa por la ULR 127.0.0.1:5000/user
-@app.route("/user")
-def user():
-    try:
-        # Renderizar el temaplate HTML user.html
-        print("Renderizar user.html")
-        return render_template('user.html')
-    except:
-        return jsonify({'trace': traceback.format_exc()})
-
-
-# Ruta que se ingresa por la ULR 127.0.0.1:5000/user/<nombre>
-@app.route("/user/<name>")
-def user_name(name):
-    try:
-        # Renderizar el temaplate HTML user.html
-        print("Renderizar user.html con le nombre", name)
-        return render_template('user.html', name=name)
-    except:
-        return jsonify({'trace': traceback.format_exc()})
+        # En caso de falla, retornar el mensaje de error
+        return jsonify({'trace': traceback.format_exc()}) #NOS INDICA QUE TIPO DE ERROR NOS SALIO
 
 if __name__ == '__main__':
     print('Inove@Server start!')

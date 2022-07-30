@@ -14,94 +14,60 @@ http://127.0.0.1:5000/
 '''
 
 import traceback
-from flask import Flask, request, jsonify, render_template, Response, redirect
+from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
 
 # Crear el server Flask
 app = Flask(__name__)
-
-# Variable global para poner a prueba el método [GET]
-# IMPORTANTE: Esta no es una buena forma de manejar datos,
-# se debe usar base de dato (se verá en otro ejemplo más adelante)
-base_de_datos = [
-    {
-        "name": "Inove",
-        "heartrate": 80
-    },
-    {
-        "name": "Python",
-        "heartrate": 65
-    },
-    {
-        "name": "Max",
-        "heartrate": 110
-    }
-]
 
 # Ruta que se ingresa por la ULR 127.0.0.1:5000
 @app.route("/")
 def index():
     try:
-        # Imprimir los distintos endopoints disponibles
-        result = "<h1>Bienvenido!!</h1>"
-        result += "<h2>Endpoints disponibles:</h2>"
-        result += "<h3>[GET] /pulsaciones?limit=[]&offset=[] --> mostrar últimas pulsaciones registradas (limite and offset are optional)</h3>"
-        result += "<h3>[GET] /pulsaciones/<name> --> mostrar el histórico de pulsaciones de una persona</h3>"
-        return(result)
+        # Renderizar el temaplate HTML index.html
+        print("Renderizar index.html")
+        return render_template('index.html')
     except:
         return jsonify({'trace': traceback.format_exc()})
 
 
-# Ruta que se ingresa por la ULR 127.0.0.1:5000/pulsaciones
-@app.route("/pulsaciones")
-def pulsaciones():
+# Ruta que se ingresa por la ULR 127.0.0.1:5000/user/<nombre>
+@app.route("/user/<name>")
+def user_name(name):
     try:
-        # Obtener de la query string los valores de limit y offset
-        limit_str = str(request.args.get('limit'))
-        offset_str = str(request.args.get('offset'))
-
-        limit = len(base_de_datos)
-        offset = 0
-
-        if(limit_str is not None) and (limit_str.isdigit()):
-            limit = int(limit_str)
-
-        if(offset_str is not None) and (offset_str.isdigit()):
-            offset = int(offset_str)
-
-        # Obtener el reporte
-        inicio = offset
-        fin = offset + limit
-        data = base_de_datos[inicio:fin]
-
-        print("Dato solicitados")
-        print(data)
-
-        # Transformar json a json string para enviar al HTML
-        return jsonify(data)
+        # Renderizar el temaplate HTML user.html
+        print("Renderizar user.html con le nombre", name)
+        return render_template('user.html', name=name)
     except:
         return jsonify({'trace': traceback.format_exc()})
 
 
-# Ruta que se ingresa por la ULR 127.0.0.1:5000/pulsaciones/<nombre>
-@app.route("/pulsaciones/<name>") # AQUI LE PASAMOS EL PARAMETRO <name>
-def pulsaciones_historico(name):
-    try:
-        # Obtener el historial de la persona
-        datos_persona = {}
-        for dato in base_de_datos:
-            if dato["name"] == name:
-                datos_persona = dato
+# Ruta que se ingresa por la ULR 127.0.0.1:5000/login/
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        # Si entré por "GET" es porque acabo de cargar la página
+        try:
+            # Renderizar el temaplate HTML login.html para registrar el usuario
+            return render_template('login.html')
+        except:
+            return jsonify({'trace': traceback.format_exc()})
 
-        print("Dato solicitado para el nombre", name)
-        print(datos_persona)
+    if request.method == 'POST':
+        # Se captura la petición de registrar un usuario
+        # Obtener del HTTP POST JSON el nombre
+        name = str(request.form.get('name')) # aqui le indico el nombre
+        contraseña = str(request.form.get('pass')) # aqui le indico la contraseña
+        
+        if(name is None):
+            # Datos ingresados incorrectos
+            return Response(status=400)
 
-        # Transformar json a json string para enviar al HTML
-        return jsonify(datos_persona)
-    except:
-        return jsonify({'trace': traceback.format_exc()})
+        # Redireccionar el servidor a la URL del endpoint user_name
+        # con el campo de "name" que se capturó en el POST
+        return redirect(url_for('user_name', name=name))
 
 if __name__ == '__main__':
     print('Inove@Server start!')
 
     # Lanzar server
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000)

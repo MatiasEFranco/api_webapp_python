@@ -16,7 +16,7 @@ http://127.0.0.1:5000/
 # Realizar HTTP POST con --> post.py
 
 import traceback
-from flask import Flask, request, jsonify, render_template, Response, redirect
+from flask import Flask, request, jsonify, render_template, Response, redirect, url_for
 
 import utils
 import persona
@@ -29,26 +29,19 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///personas.db"
 persona.db.init_app(app)
 
 
-@app.route("/") # Endpoint raiz
+@app.route("/")
 def index():
     try:
-        # Imprimir los distintos endopoints disponibles, formato html
-        result = "<h1>Bienvenido!!</h1>"
-        result += "<h2>Endpoints disponibles:</h2>"
-        result += "<h2>Ejercicio Nº1:</h2>"
-        result += "<h3>[GET] /personas?limit=[]&offset=[] --> mostrar el listado de personas (limite and offset are optional)</h3>"
-        result += "<h2>Ejercicio Nº2:</h2>"
-        result += "<h3>[POST] /registro --> ingresar una nueva persona por JSON, implementar la captura de los valores</h3>"
-        result += "<h2>Ejercicio Nº3:</h2>"
-        result += "<h3>[GET] /comparativa --> mostrar un gráfico con las edades de todas las personas"
-        
-        return(result)
+        # Imprimir los distintos endopoints disponibles
+        # Renderizar el temaplate HTML index.html
+        print("Renderizar index.html")
+        return render_template('index.html')
     except:
         return jsonify({'trace': traceback.format_exc()})
 
 
 # ejercicio de practica Nº1
-@app.route("/personas") # Endpoint de personas
+@app.route("/personas")
 def personas():
     try:
         # Alumno:
@@ -60,10 +53,10 @@ def personas():
         # Debe verificar si el limit y offset son válidos cuando
         # no son especificados en la URL
 
+        # Alumno: Pasarle al metodo report los valores de limit y offset
         # Obtener de la query string los valores de limit y offset
-        # Obtener de la query string los valores de limit y offset
-        limit_str = str(request.args.get('limit')) # realizamos el GET dentro de la pagina, se lo utiliza para realizar filtros
-        offset_str = str(request.args.get('offset')) # realizamos el GET dentro de la pagina, se lo utiliza para realizar filtros
+        limit_str = str(request.args.get('limit'))
+        offset_str = str(request.args.get('offset'))
 
         limit = 0
         offset = 0
@@ -73,21 +66,34 @@ def personas():
 
         if(offset_str is not None) and (offset_str.isdigit()):
             offset = int(offset_str)
-
-        result = persona.report(limit=limit, offset=offset)
+      
+        data = persona.report()
         
-        return jsonify(result) # devolvemos el dato en JSON
+        return render_template('tabla.html', data=data)
     except:
-        return jsonify({'trace': traceback.format_exc()}) # mendaje a cualqueir error que se genera
+        return jsonify({'trace': traceback.format_exc()})
 
 
 # ejercicio de practica Nº2
-@app.route("/registro", methods=['POST'])
+@app.route("/registro", methods=['GET', 'POST'])
 def registro():
-    if request.method == 'POST': # aqui se indica el tipo de metodo a utilizar, podria haber sido el GET
+    if request.method == 'GET':
+        try:
+            return render_template('registro.html')
+        except:
+            return jsonify({'trace': traceback.format_exc()})
+
+    if request.method == 'POST':
         try:
             name = ""
             age = 0
+            name = str(request.form.get('name')).lower()
+            age = str(request.form.get('age'))
+
+            if(name is None or age is None or age.isdigit() is False): # aqui validamaos que no sean 0 y que la edad sea un digito el valor ingresado
+                # Datos ingresados incorrectos
+                return Response(status=400)        
+
             # Alumno:
             # Obtener del HTTP POST JSON el nombre y la edad
             # name = ...
@@ -95,16 +101,10 @@ def registro():
 
             # Alumno: descomentar la linea persona.insert una vez implementado
             # lo anterior:
-                       
-
-            name = str(request.form.get('name')).lower()
-            age = str(request.form.get('age'))
-
-            if (name == None or age == None or (age.isdigit() is False)):
-                return Response(status=400)
-                        
-            persona.insert(name, int(age)) # aqui agregamos la informacion de la persona en el objeto perosna
-            return Response(status=200)
+            persona.insert(name, int(age))
+            
+            # Como respuesta al POST devolvemos la tabla de valores
+            return redirect(url_for('personas'))
         except:
             return jsonify({'trace': traceback.format_exc()})
 
@@ -128,9 +128,8 @@ def comparativa():
 
         x, y = persona.dashboard()
         image_html = utils.graficar(x, y)
-        return Response(image_html.getvalue(), mimetype='image/png')
 
-        # return "Alumno --> Realice la implementacion"
+        return Response(image_html.getvalue(), mimetype='image/png')
     except:
         return jsonify({'trace': traceback.format_exc()})
 

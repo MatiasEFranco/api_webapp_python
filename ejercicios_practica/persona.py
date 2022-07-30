@@ -57,11 +57,12 @@ def report(limit=0, offset=0):
 def dashboard():
     x= []
     y = []
-    query = db.session.query(Persona)
+    query = db.session.query(Persona) # aqui grabamos todas las filas de la Base de Datos
     for datos in query:
-        x.append(datos.id)
-        y.append(datos.age)
+        x.append(datos.id) # aqui guardamos los ID
+        y.append(datos.age) # aqui guardamos las edades de esos ID
     return x, y
+
 
 if __name__ == "__main__":
     print("Test del modulo heart.py")
@@ -81,10 +82,6 @@ if __name__ == "__main__":
 
     # Aquí se puede ensayar todo lo que necesitemos con nuestra DB
     # ...
-    insert(name="Florencia", age=24)
-    
-    datos = report()
-    print(datos)
 
     db.session.remove()
     db.drop_all()
